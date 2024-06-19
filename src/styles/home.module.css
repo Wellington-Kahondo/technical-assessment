@@ -1,0 +1,41 @@
+/* styles/home.module.css */
+.top_section {
+    padding: 100px 300px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .title{
+    font-weight: bolder;
+    font-size: 30px;
+  }
+  
+  .search_section {
+    display: flex;
+    align-items: center;
+    min-width: 600px;
+  }
+  
+  .text {
+    text-align: center;
+    color: #777676;;
+    font-weight: bold;
+    font-size: 20px;
+  }
+  
+  .bottom_text {
+    color: white;
+    text-align: center;
+    margin-top: 50px;
+  }
+
+  .table_container {  
+    padding: 0 300px;
+  }
+  
+  .main_content {
+    background-color: rgb(235, 233, 233);
+  }
+
+  
