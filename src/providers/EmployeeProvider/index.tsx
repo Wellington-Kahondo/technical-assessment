@@ -17,8 +17,8 @@ const EmployeeProvider: FC<PropsWithChildren> = ({ children }) => {
 
   const [state, dispatch] = useReducer(EmployeeReducer, EMPLOYEE_CONTEXT_INITIAL_STATE);
 
-  const success = () => {
-    message.success('Operation was successful.');
+  const success = (msg: string) => {
+    message.success(msg);
   };
 
   const error = (error: string) => {
@@ -33,16 +33,20 @@ const EmployeeProvider: FC<PropsWithChildren> = ({ children }) => {
   });
 
   const createEmployee = async (employeeInfo: IEmployeeModel) => {
-
     try {
-
       const response = await instance.post('/api/services/app/Employee/CreateEmployee', employeeInfo);
       const data = response.data;
       if (data?.success) {
-        dispatch(createEmployeeRequestAction(data?.result))
+        dispatch(createEmployeeRequestAction(data?.result));
+        success('Employee was created successfully');
+        return data.result;  // Return the created employee data
+      } else {
+        console.error("Failed to create employee");
+        return null; // Return null if the creation was not successful
       }
     } catch (error) {
       console.error(error);
+      return null; // Return null in case of an error
     }
   };
 
@@ -73,7 +77,7 @@ const EmployeeProvider: FC<PropsWithChildren> = ({ children }) => {
 
       if (data?.success) {
         dispatch(updateEmployeeRequestAction(data?.result));
-        success();
+        success('Employee details were updated successfully.');
       }
     } catch (error) {
       console.error(error);
@@ -88,7 +92,7 @@ const EmployeeProvider: FC<PropsWithChildren> = ({ children }) => {
       const data = response.data;
 
       if(data?.success){
-        success()
+        success('Employee was deleted successfully')
       }
 
     } catch (error) {

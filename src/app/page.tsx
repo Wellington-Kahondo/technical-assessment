@@ -15,7 +15,7 @@ const { Option } = Select;
 type SearchField = keyof IEmployeeModel;
 
 export default function Home() {
-  const { createEmployee, getAllEmployees, updateEmployee, deleteEmployee } = useEmployee();
+  const { createEmployee, getAllEmployees, updateEmployee, deleteEmployee, employeeInfo } = useEmployee();
 
   const [employees, setEmployees] = useState<IEmployeeModel[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -28,24 +28,32 @@ export default function Home() {
 
   const [isLoading, setLoading] = useState(true); // State for loading indicator
 
+
   const [employeeForm] = Form.useForm();
 
-  // useEffect(() => {
-  //   const getEmployees = async () => {
-  //     var data = await getAllEmployees();
-  //     if (data !== null && data !== undefined) {
-  //       setEmployees(data as IEmployeeModel[]);
-  //     }
-  //   }
-  //   getEmployees();
-  // }, []);
+
+
+  useEffect(() => {
+    const getEmployees = async () => {
+      try {
+
+        const data = await getAllEmployees();
+        if (data !== null && data !== undefined) {
+          setEmployees(data as IEmployeeModel[]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
+      }
+    }
+    getEmployees();
+  }, [employeeInfo]);
 
   useEffect(() => {
     const getEmployees = async () => {
       try {
         setLoading(true); // Set loading state to true on fetch start
         const data = await getAllEmployees();
-        if (data !==null && data !== undefined) {
+        if (data !== null && data !== undefined) {
           setEmployees(data as IEmployeeModel[]);
         }
       } catch (error) {
@@ -72,7 +80,7 @@ export default function Home() {
     setIsDeleteModalVisible(false);
   };
 
-  const handleOk = (values: any) => {
+  const handleOk = async (values: any) => {
     const newEmployee: IEmployeeModel = {
       id: values.id,
       firstName: values.firstName,
@@ -81,34 +89,33 @@ export default function Home() {
       emailAddress: values.emailAddress,
       dateOfBirth: values.dateOfBirth,
       address: {
-          street: values.street,
-          city: values.city,
-          postalCode: values.postalCode,
-          country: values.country,
+        street: values.street,
+        city: values.city,
+        postalCode: values.postalCode,
+        country: values.country,
       },
       skills: values.skills.map((skill: ISkill) => ({
         ...skill,
-        seniorityRating: skill.seniorityRatingText 
-        ? { '1': 1, '2': 2, '3': 3, '4': 4 }[skill.seniorityRatingText]
-        : undefined
-    })) || [],
-  };
+        seniorityRating: skill.seniorityRatingText
+          ? { '1': 1, '2': 2, '3': 3, '4': 4 }[skill.seniorityRatingText]
+          : undefined
+      })) || [],
+    };
     if (isEditing) {
-
-
       // update employee
       updateEmployee(newEmployee);
       setEmployees(employees.map(emp => emp.emailAddress === currentEmployee?.emailAddress ? newEmployee : emp));
+
     } else {
       // create employee
-      createEmployee(newEmployee);
-      setEmployees([...employees, newEmployee]);
+      createEmployee(newEmployee)
     }
 
     setIsModalVisible(false);
     setIsEditing(false);
     setCurrentEmployee({});
     employeeForm.resetFields();
+
   };
 
   const handleDelete = () => {
@@ -174,80 +181,84 @@ export default function Home() {
       key: 'actions',
       render: (text: any, record: IEmployeeModel) => (
         <>
-          <EditOutlined size={50} style={{ marginRight: 16, width: 50 }} onClick={() => handleEdit(record)} />
-          <DeleteOutlined onClick={() => { setCurrentEmployee(record); setIsDeleteModalVisible(true); }} />
+          <EditOutlined size={50} style={{ marginRight: 16, width: 50, color: 'blue' }} onClick={() => handleEdit(record)} />
+          <DeleteOutlined onClick={() => { setCurrentEmployee(record); setIsDeleteModalVisible(true); }} style={{ color: 'red' }} />
         </>
       ),
     },
   ];
 
+  const pagination = {
+    pageSize: 5,
+  };
+
   return (
     <div>
-      {isLoading ? ( 
-        <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh'}}>
-        <Spin tip="Loading..." size="large" fullscreen/>
+      {isLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Spin tip="Loading..." size="large" fullscreen />
         </div>
-        ) :
+      ) :
 
-      (<>
-      <div className={style.top_section}>
-        <div>
-          <h1 className={style.title}>Employees</h1>
-          <p>There are {employees !== undefined ? employees.length : 0} employees</p>
-        </div>
-        {employees?.length > 0 && (
-          <div className={style.search_section}>
-            <Input
-              placeholder="Search"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ marginRight: 10 }}
-            />
-            <Dropdown overlay={menu} trigger={['click']}>
-              <a onClick={(e) => e.preventDefault()}>
-                <Space style={{ marginRight: 10, width: 150 }}>
-                  {selectedValue ? `${selectedValue}` : 'Filter by'}
-                  <DownOutlined />
-                </Space>
-              </a>
-            </Dropdown>
+        (<>
+          <div className={style.top_section}>
+            <div>
+              <h1 className={style.title}>Employees</h1>
+              <p>There are {employees !== undefined ? employees.length : 0} employees</p>
+            </div>
+            {employees?.length > 0 && (
+              <div className={style.search_section}>
+                <Input
+                  placeholder="Search"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ marginRight: 10 }}
+                />
+                <Dropdown overlay={menu} trigger={['click']}>
+                  <a onClick={(e) => e.preventDefault()}>
+                    <Space style={{ marginRight: 10, width: 150 }}>
+                      {selectedValue ? `${selectedValue}` : 'Filter by'}
+                      <DownOutlined />
+                    </Space>
+                  </a>
+                </Dropdown>
+              </div>
+            )}
+            <Button size='large' style={{ borderRadius: '30px', padding: '30px', width: 200 }} icon={<PlusOutlined style={{ fontSize: '30px', fontWeight: 'bolder' }} />} type="primary" onClick={showModal}>
+              New Employee
+            </Button>
           </div>
+          {employees !== undefined && employees.length > 0 ? (
+            <div className={style.table_container}>
+              <Table style={{ background: 'white', padding: '10px', borderRadius: '5px', boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 15px' }} pagination={pagination} dataSource={handleSearch()} columns={columns} rowKey="emailAddress" />
+            </div>
+          ) : (
+            <div className={style.bottom_text}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+                <img alt="example" src="./assets/icon.png" />
+              </div>
+              <h1 className={style.text}>There is nothing here</h1>
+              <p style={{ color: '#777676' }}>
+                Create a new employee by clicking the New Employee button to get
+                started
+              </p>
+            </div>
+          )}
+          <EditEmployeeModal
+            isVisible={isModalVisible}
+            isEditing={isEditing}
+            currentEmployee={currentEmployee}
+            onCancel={handleCancel}
+            onOk={handleOk}
+            form={employeeForm}
+          />
+          <DeleteConfirmationModal
+            isVisible={isDeleteModalVisible}
+            onOk={handleDelete}
+            onCancel={handleDeleteCancel}
+          />
+        </>
         )}
-        <Button size='large' style={{ borderRadius: '30px', padding: '30px', width: 200 }} icon={<PlusOutlined style={{ fontSize: '30px', fontWeight: 'bolder' }} />} type="primary" onClick={showModal}>
-          New Employee
-        </Button>
-      </div>
-      {employees !== undefined && employees.length > 0 ? (
-        <div className={style.table_container}>
-          <Table style={{ background: 'white', padding: '10px', borderRadius: '5px', boxShadow: 'rgba(0, 0, 0, 0.35) 0px 5px 15px' }} dataSource={handleSearch()} columns={columns} rowKey="emailAddress" />
-        </div>
-      ) : (
-        <div className={style.bottom_text}>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
-            <img alt="example" src="./assets/icon.png" />
-          </div>
-          <h1 className={style.text}>There is nothing here</h1>
-          <p style={{ color: '#777676' }}>
-            Create a new employee by clicking the New Employee button to get
-            started
-          </p>
-        </div>
-      )}
-      <EditEmployeeModal
-        isVisible={isModalVisible}
-        isEditing={isEditing}
-        currentEmployee={currentEmployee}
-        onCancel={handleCancel}
-        onOk={handleOk}
-        form={employeeForm}
-      />
-      <DeleteConfirmationModal
-        isVisible={isDeleteModalVisible}
-        onOk={handleDelete}
-        onCancel={handleDeleteCancel}
-      />
-</>
-    )}
     </div>
   );
 };
